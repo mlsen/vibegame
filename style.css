@@ -67,6 +67,150 @@ html, body {
   50% { opacity: 0.4; }
 }
 
+/* ─── Player HUD ──────────────────────────────────────────────────────── */
+
+#player-hud {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.hud-portrait {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid #8b6d35;
+  background: linear-gradient(135deg, #2a1f3d, #1a1228);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+}
+
+.portrait-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #f5c6a0, #d4a07a);
+}
+
+.hud-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hp-bar-container {
+  width: 200px;
+  height: 22px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #8b6d35;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(180deg, #44cc44, #228822);
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+.hp-bar-fill.low {
+  background: linear-gradient(180deg, #cc4444, #882222);
+}
+
+.hp-bar-fill.mid {
+  background: linear-gradient(180deg, #ccaa22, #886622);
+}
+
+.hp-bar-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* ─── Boss HP Bar ─────────────────────────────────────────────────────── */
+
+#boss-bar {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(500px, 80vw);
+  z-index: 5;
+  pointer-events: none;
+  text-align: center;
+}
+
+#boss-bar.hidden {
+  display: none;
+}
+
+.boss-name {
+  color: #ff6644;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(255, 50, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.8);
+  margin-bottom: 4px;
+}
+
+.boss-title {
+  color: #ffaa66;
+  font-weight: normal;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.boss-hp-container {
+  width: 100%;
+  height: 18px;
+  background: rgba(0, 0, 0, 0.75);
+  border: 2px solid #882200;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 12px rgba(255, 50, 0, 0.25);
+}
+
+.boss-hp-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(180deg, #cc3322, #881100);
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+.boss-hp-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
 /* ─── Interact Prompt ─────────────────────────────────────────────────── */
 
 #interact-prompt {

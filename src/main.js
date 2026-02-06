@@ -5,6 +5,7 @@ import { createControls } from './controls.js';
 import { createCamera } from './camera.js';
 import { COLORS, getTerrainHeight } from './utils.js';
 import { createSvenBotschnig } from './npc.js';
+import { createMonsterSystem } from './monsters.js';
 
 // ─── Renderer ────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,52 @@ const svenX = 6, svenZ = 4;
 const svenY = getTerrainHeight(svenX, svenZ);
 sven.group.position.set(svenX, svenY, svenZ);
 scene.add(sven.group);
+
+// ─── Monsters ────────────────────────────────────────────────────────────────
+
+const monsterSystem = createMonsterSystem(scene);
+
+// ─── Player HP ───────────────────────────────────────────────────────────────
+
+const playerState = { hp: 100, maxHp: 100 };
+const playerHpFill = document.getElementById('player-hp-fill');
+const playerHpText = document.getElementById('player-hp-text');
+
+function updatePlayerHUD() {
+  const ratio = playerState.hp / playerState.maxHp;
+  playerHpFill.style.width = (ratio * 100) + '%';
+  playerHpText.textContent = `${Math.ceil(playerState.hp)} / ${playerState.maxHp}`;
+  playerHpFill.classList.remove('low', 'mid');
+  if (ratio < 0.3) playerHpFill.classList.add('low');
+  else if (ratio < 0.6) playerHpFill.classList.add('mid');
+}
+
+// ─── Boss HP Bar UI ──────────────────────────────────────────────────────────
+
+const bossBarEl = document.getElementById('boss-bar');
+const bossHpFill = document.getElementById('boss-hp-fill');
+const bossHpText = document.getElementById('boss-hp-text');
+const BOSS_SHOW_DISTANCE = 50;
+
+function updateBossHUD() {
+  const boss = monsterSystem.monsters.find(m => m.isBoss);
+  if (!boss || boss.state === 'dead') {
+    bossBarEl.classList.add('hidden');
+    return;
+  }
+  const dx = character.group.position.x - boss.group.position.x;
+  const dz = character.group.position.z - boss.group.position.z;
+  const dist = Math.sqrt(dx * dx + dz * dz);
+
+  if (dist < BOSS_SHOW_DISTANCE) {
+    bossBarEl.classList.remove('hidden');
+    const ratio = boss.hp / boss.maxHp;
+    bossHpFill.style.width = (ratio * 100) + '%';
+    bossHpText.textContent = `${Math.ceil(boss.hp)} / ${boss.maxHp}`;
+  } else {
+    bossBarEl.classList.add('hidden');
+  }
+}
 
 // ─── Camera ──────────────────────────────────────────────────────────────────
 
@@ -157,6 +204,19 @@ document.addEventListener('keyup', (e) => {
   if (e.code === 'KeyE') eKeyHandled = false;
 });
 
+// ─── Attack Input ────────────────────────────────────────────────────────────
+
+const PLAYER_ATTACK_DAMAGE = 15;
+const PLAYER_ATTACK_RANGE = 3;
+let attackHitChecked = false;
+
+document.addEventListener('mousedown', (e) => {
+  if (e.button === 0 && controls.locked && !dialogueOpen) {
+    character.attack();
+    attackHitChecked = false;
+  }
+});
+
 // ─── Game Loop ───────────────────────────────────────────────────────────────
 
 const clock = new THREE.Clock();
@@ -231,6 +291,44 @@ function gameLoop() {
 
   // Update character animation
   character.update(delta, controls.isMoving, controls.speed / 5, isGrounded);
+
+  // ─── Combat ──────────────────────────────────────────────────────────
+  // Update monsters
+  monsterSystem.update(delta, character.group.position);
+
+  // Player attack hit check (at peak of swing ~30%)
+  if (character.isAttacking && character.attackProgress > 0.25 && !attackHitChecked) {
+    monsterSystem.attackMonstersInRange(
+      character.group.position,
+      character.group.rotation.y,
+      PLAYER_ATTACK_RANGE,
+      PLAYER_ATTACK_DAMAGE
+    );
+    attackHitChecked = true;
+  }
+
+  // Monster damage to player
+  const dmg = monsterSystem.checkPlayerDamage(character.group.position);
+  if (dmg > 0) {
+    playerState.hp = Math.max(0, playerState.hp - dmg);
+    updatePlayerHUD();
+  }
+
+  // HP regen (slow, out-of-combat feel)
+  if (playerState.hp > 0 && playerState.hp < playerState.maxHp) {
+    playerState.hp = Math.min(playerState.maxHp, playerState.hp + 1 * delta);
+    updatePlayerHUD();
+  }
+
+  // Billboard monster HP bars toward camera
+  for (const m of monsterSystem.monsters) {
+    if (m.hpBar && m.hpBar.visible) {
+      m.hpBar.lookAt(cam.camera.position);
+    }
+  }
+
+  // Update boss HP bar UI
+  updateBossHUD();
 
   // Update Sven Botschnig
   sven.update(delta);

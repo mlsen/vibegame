@@ -14,6 +14,8 @@ export function createCharacter() {
     breatheTime: 0,
     isMoving: false,
     speed: 0,
+    attackTime: 0,
+    isAttacking: false,
   };
 
   // ─── Body parts ────────────────────────────────────────────────────────
@@ -166,6 +168,45 @@ export function createCharacter() {
   rightHand.position.y = -0.55;
   rightArmGroup.add(rightHand);
 
+  // ─── Sword ────────────────────────────────────────────────────────────
+  const swordGroup = new THREE.Group();
+  swordGroup.position.y = -0.55;
+
+  // Grip
+  const grip = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03, 0.03, 0.22, 5),
+    mat(0x5c3a1e)
+  );
+  grip.position.y = -0.11;
+  swordGroup.add(grip);
+
+  // Crossguard
+  const crossguard = new THREE.Mesh(
+    new THREE.BoxGeometry(0.22, 0.04, 0.06),
+    mat(0xccaa44, { metalness: 0.6, roughness: 0.3 })
+  );
+  crossguard.position.y = -0.01;
+  swordGroup.add(crossguard);
+
+  // Blade
+  const blade = new THREE.Mesh(
+    new THREE.BoxGeometry(0.06, 0.6, 0.02),
+    mat(0xccccdd, { metalness: 0.8, roughness: 0.2 })
+  );
+  blade.position.y = 0.3;
+  blade.castShadow = true;
+  swordGroup.add(blade);
+
+  // Tip
+  const tip = new THREE.Mesh(
+    new THREE.ConeGeometry(0.03, 0.1, 4),
+    mat(0xccccdd, { metalness: 0.8, roughness: 0.2 })
+  );
+  tip.position.y = 0.65;
+  swordGroup.add(tip);
+
+  rightArmGroup.add(swordGroup);
+
   group.add(rightArmGroup);
 
   // ─── Legs ──────────────────────────────────────────────────────────────
@@ -233,10 +274,36 @@ export function createCharacter() {
 
   // ─── Animation Update ─────────────────────────────────────────────────
 
+  function attack() {
+    if (!anim.isAttacking) {
+      anim.isAttacking = true;
+      anim.attackTime = 0;
+    }
+  }
+
   function update(delta, isMoving, speed = 1, isGrounded = true) {
     anim.isMoving = isMoving;
     anim.speed = speed;
     anim.breatheTime += delta;
+
+    // Attack animation (overrides right arm)
+    if (anim.isAttacking) {
+      anim.attackTime += delta;
+      const SWING_DURATION = 0.35;
+      const t = anim.attackTime / SWING_DURATION;
+
+      if (t < 1) {
+        // Swing arc: wind up then slash down
+        const swingAngle = t < 0.3
+          ? THREE.MathUtils.lerp(0, -2.2, t / 0.3)
+          : THREE.MathUtils.lerp(-2.2, 0.3, (t - 0.3) / 0.7);
+        rightArmGroup.rotation.x = swingAngle;
+        rightArmGroup.rotation.z = Math.sin(t * Math.PI) * -0.4;
+      } else {
+        anim.isAttacking = false;
+        anim.attackTime = 0;
+      }
+    }
 
     if (!isGrounded) {
       // ─── Jump pose ──────────────────────────────────────────────────
@@ -244,7 +311,7 @@ export function createCharacter() {
       leftLegGroup.rotation.x = -0.5;
       rightLegGroup.rotation.x = -0.5;
       leftArmGroup.rotation.x = -0.8;
-      rightArmGroup.rotation.x = -0.8;
+      if (!anim.isAttacking) rightArmGroup.rotation.x = -0.8;
 
       // Pigtails fly up
       leftBun.position.y = 0.3;
@@ -275,7 +342,7 @@ export function createCharacter() {
     // Arm swing (opposite to legs)
     const armSwing = Math.sin(walkPhase) * 0.5 * walkIntensity;
     leftArmGroup.rotation.x = -armSwing;
-    rightArmGroup.rotation.x = armSwing;
+    if (!anim.isAttacking) rightArmGroup.rotation.x = armSwing;
 
     // Body bob
     const bob = Math.abs(Math.sin(walkPhase * 2)) * 0.08 * walkIntensity;
@@ -306,7 +373,11 @@ export function createCharacter() {
   // Set default position so feet are near y=0
   group.position.y = 0;
 
-  return { group, update };
+  return {
+    group, update, attack,
+    get isAttacking() { return anim.isAttacking; },
+    get attackProgress() { return anim.attackTime / 0.35; },
+  };
 }
 
 function createBun() {
