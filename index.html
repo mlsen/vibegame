@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WoW 2.0</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+  <div id="overlay">
+    <div class="overlay-content">
+      <h1>WoW 2.0</h1>
+      <p>Click to Play</p>
+      <div class="controls-info">
+        <span>WASD - Move</span>
+        <span>Mouse - Look</span>
+        <span>Shift - Sprint</span>
+      </div>
+    </div>
+  </div>
+  <div id="interact-prompt" class="hidden">
+    <span class="key-hint">E</span> Sven Botschnig ansprechen
+  </div>
+  <div id="dialogue-box" class="hidden">
+    <div class="dialogue-header">
+      <span class="dialogue-name">Sven Botschnig</span>
+    </div>
+    <div class="dialogue-text" id="dialogue-text"></div>
+    <div class="dialogue-footer">
+      <span class="key-hint">E</span> Weiter
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
