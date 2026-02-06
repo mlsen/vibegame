@@ -13,8 +13,9 @@ export function createSpellSystem(scene, monsterSystem) {
     frostbolt: {
       name: 'Frostbolt',
       key: '1',
-      cooldown: 2,
+      cooldown: 0,
       currentCd: 0,
+      castTime: 1.5,
       damage: 25,
       range: 40,
       speed: 25,
@@ -33,14 +34,14 @@ export function createSpellSystem(scene, monsterSystem) {
     },
   };
 
-  function castSpell(name, casterPos, casterAngle) {
+  function castSpell(name, casterPos, casterAngle, casterPitch) {
     const spell = spells[name];
     if (!spell || spell.currentCd > 0) return false;
 
     spell.currentCd = spell.cooldown;
 
     if (name === 'frostbolt') {
-      spawnFrostbolt(casterPos, casterAngle, spell);
+      spawnFrostbolt(casterPos, casterAngle, casterPitch || 0, spell);
     } else if (name === 'frostNova') {
       spawnFrostNova(casterPos, spell);
     }
@@ -50,7 +51,7 @@ export function createSpellSystem(scene, monsterSystem) {
 
   // ─── Frostbolt ──────────────────────────────────────────────────────
 
-  function spawnFrostbolt(casterPos, angle, spell) {
+  function spawnFrostbolt(casterPos, angle, pitch, spell) {
     const group = new THREE.Group();
 
     // Core
@@ -99,10 +100,10 @@ export function createSpellSystem(scene, monsterSystem) {
     group.position.set(casterPos.x, casterPos.y + 1.5, casterPos.z);
 
     const dir = new THREE.Vector3(
-      Math.sin(angle),
-      0,
-      Math.cos(angle)
-    );
+      Math.sin(angle) * Math.cos(pitch),
+      Math.sin(pitch),
+      Math.cos(angle) * Math.cos(pitch)
+    ).normalize();
 
     scene.add(group);
 
@@ -396,7 +397,12 @@ export function createSpellSystem(scene, monsterSystem) {
     return result;
   };
 
-  return { update, castSpell, spells };
+  function canCast(name) {
+    const spell = spells[name];
+    return spell && spell.currentCd <= 0;
+  }
+
+  return { update, castSpell, canCast, spells };
 }
 
 // ─── Icon Drawing ──────────────────────────────────────────────────────────

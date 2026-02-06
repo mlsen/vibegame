@@ -156,6 +156,7 @@ const controls = createControls(canvas);
 // ─── Overlay / Pointer Lock ──────────────────────────────────────────────────
 
 const overlay = document.getElementById('overlay');
+const crosshair = document.getElementById('crosshair');
 
 overlay.addEventListener('click', () => {
   controls.requestLock();
@@ -164,8 +165,10 @@ overlay.addEventListener('click', () => {
 document.addEventListener('pointerlockchange', () => {
   if (controls.locked) {
     overlay.classList.add('hidden');
+    crosshair.classList.add('visible');
   } else {
     overlay.classList.remove('hidden');
+    crosshair.classList.remove('visible');
   }
 });
 
@@ -246,12 +249,65 @@ document.addEventListener('mousedown', (e) => {
   }
 });
 
+// ─── Casting System ──────────────────────────────────────────────────────────
+
+const castBarEl = document.getElementById('cast-bar');
+const castBarFill = document.getElementById('cast-bar-fill');
+const castBarName = document.getElementById('cast-bar-name');
+const castBarTime = document.getElementById('cast-bar-time');
+
+let casting = null; // { spellName, elapsed, castTime }
+
+function startCast(spellName) {
+  const spell = spellSystem.spells[spellName];
+  if (!spell || !spellSystem.canCast(spellName)) return;
+
+  if (spell.castTime && spell.castTime > 0) {
+    casting = { spellName, elapsed: 0, castTime: spell.castTime };
+    castBarName.textContent = spell.name;
+    castBarFill.style.width = '0%';
+    castBarTime.textContent = `0.0 / ${spell.castTime.toFixed(1)}`;
+    castBarEl.classList.remove('hidden');
+  } else {
+    spellSystem.castSpell(spellName, character.group.position, controls.yaw, controls.pitch);
+  }
+}
+
+function cancelCast() {
+  if (!casting) return;
+  casting = null;
+  castBarEl.classList.add('hidden');
+}
+
+function updateCasting(delta) {
+  if (!casting) return;
+
+  // Interrupt on movement
+  if (controls.isMoving) {
+    cancelCast();
+    return;
+  }
+
+  casting.elapsed += delta;
+  const ratio = Math.min(casting.elapsed / casting.castTime, 1);
+  castBarFill.style.width = (ratio * 100) + '%';
+  castBarTime.textContent = `${casting.elapsed.toFixed(1)} / ${casting.castTime.toFixed(1)}`;
+
+  if (casting.elapsed >= casting.castTime) {
+    const name = casting.spellName;
+    casting = null;
+    castBarEl.classList.add('hidden');
+    spellSystem.castSpell(name, character.group.position, controls.yaw, controls.pitch);
+  }
+}
+
 document.addEventListener('keydown', (e) => {
   if (!controls.locked || dialogueOpen) return;
   if (e.code === 'Digit1') {
-    spellSystem.castSpell('frostbolt', character.group.position, character.group.rotation.y);
+    if (!casting) startCast('frostbolt');
   } else if (e.code === 'Digit2') {
-    spellSystem.castSpell('frostNova', character.group.position, character.group.rotation.y);
+    cancelCast();
+    spellSystem.castSpell('frostNova', character.group.position, controls.yaw, controls.pitch);
   }
 });
 
@@ -367,6 +423,9 @@ function gameLoop() {
 
   // Update boss HP bar UI
   updateBossHUD();
+
+  // Update casting
+  updateCasting(delta);
 
   // Update spells
   spellSystem.update(delta);
