@@ -6,6 +6,7 @@ import { createCamera } from './camera.js';
 import { COLORS, getTerrainHeight } from './utils.js';
 import { createSvenBotschnig } from './npc.js';
 import { createMonsterSystem } from './monsters.js';
+import { createSpellSystem, drawFrostboltIcon, drawFrostNovaIcon } from './spells.js';
 
 // ─── Renderer ────────────────────────────────────────────────────────────────
 
@@ -73,6 +74,34 @@ scene.add(sven.group);
 // ─── Monsters ────────────────────────────────────────────────────────────────
 
 const monsterSystem = createMonsterSystem(scene);
+
+// ─── Spell System ────────────────────────────────────────────────────────────
+
+const spellSystem = createSpellSystem(scene, monsterSystem);
+
+// Draw spell icons
+const frostboltCanvas = document.getElementById('icon-frostbolt');
+drawFrostboltIcon(frostboltCanvas.getContext('2d'), 48);
+const frostNovaCanvas = document.getElementById('icon-frostNova');
+drawFrostNovaIcon(frostNovaCanvas.getContext('2d'), 48);
+
+const cdFrostbolt = document.getElementById('cd-frostbolt');
+const cdFrostNova = document.getElementById('cd-frostNova');
+const slotFrostbolt = document.getElementById('slot-1');
+const slotFrostNova = document.getElementById('slot-2');
+
+function updateActionBar() {
+  const fb = spellSystem.spells.frostbolt;
+  const fn = spellSystem.spells.frostNova;
+
+  const fbRatio = fb.currentCd / fb.cooldown;
+  cdFrostbolt.style.height = (fbRatio * 100) + '%';
+  slotFrostbolt.classList.toggle('on-cooldown', fbRatio > 0);
+
+  const fnRatio = fn.currentCd / fn.cooldown;
+  cdFrostNova.style.height = (fnRatio * 100) + '%';
+  slotFrostNova.classList.toggle('on-cooldown', fnRatio > 0);
+}
 
 // ─── Player HP ───────────────────────────────────────────────────────────────
 
@@ -217,6 +246,15 @@ document.addEventListener('mousedown', (e) => {
   }
 });
 
+document.addEventListener('keydown', (e) => {
+  if (!controls.locked || dialogueOpen) return;
+  if (e.code === 'Digit1') {
+    spellSystem.castSpell('frostbolt', character.group.position, character.group.rotation.y);
+  } else if (e.code === 'Digit2') {
+    spellSystem.castSpell('frostNova', character.group.position, character.group.rotation.y);
+  }
+});
+
 // ─── Game Loop ───────────────────────────────────────────────────────────────
 
 const clock = new THREE.Clock();
@@ -329,6 +367,10 @@ function gameLoop() {
 
   // Update boss HP bar UI
   updateBossHUD();
+
+  // Update spells
+  spellSystem.update(delta);
+  updateActionBar();
 
   // Update Sven Botschnig
   sven.update(delta);

@@ -17,6 +17,8 @@
         <span>Mouse - Look</span>
         <span>Shift - Sprint</span>
         <span>Left Click - Attack</span>
+        <span>1 - Frostbolt</span>
+        <span>2 - Frost Nova</span>
       </div>
     </div>
   </div>
@@ -36,6 +38,20 @@
     <div class="boss-hp-container">
       <div class="boss-hp-fill" id="boss-hp-fill"></div>
       <span class="boss-hp-text" id="boss-hp-text">500 / 500</span>
+    </div>
+  </div>
+  <div id="action-bar">
+    <div class="action-slot" id="slot-1">
+      <canvas class="spell-icon" id="icon-frostbolt" width="48" height="48"></canvas>
+      <div class="cooldown-overlay" id="cd-frostbolt"></div>
+      <span class="slot-key">1</span>
+      <span class="spell-name">Frostbolt</span>
+    </div>
+    <div class="action-slot" id="slot-2">
+      <canvas class="spell-icon" id="icon-frostNova" width="48" height="48"></canvas>
+      <div class="cooldown-overlay" id="cd-frostNova"></div>
+      <span class="slot-key">2</span>
+      <span class="spell-name">Frost Nova</span>
     </div>
   </div>
   <div id="interact-prompt" class="hidden">
